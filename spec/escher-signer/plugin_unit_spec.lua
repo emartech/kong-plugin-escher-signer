@@ -28,39 +28,4 @@ describe("escher-signer plugin", function()
     _G.ngx = old_ngx
   end)
 
-  describe("when say_hello is true", function()
-    before_each(function()
-      mock_config = {
-        say_hello = true
-      }
-      handler:access(mock_config)
-    end)
-
-    it("adds the correct header value of Hello World!!!", function()
-      assert.is_not.falsy(ngx.header['Hello-World'])
-      assert.is_equal("Hey!", ngx.header['Hello-World'])
-    end)
-
-    it("calls ngx.log", function()
-      assert.stub(ngx.log).was.called_with("ERROR:", "============ Hey World! ============")
-    end)
-  end)
-
-  describe("when say_hello is false", function()
-    before_each(function()
-      mock_config = {
-        say_hello = false
-      }
-      handler:access(mock_config)
-    end)
-
-    it("adds the correct header value of Bye World!!!", function()
-      assert.is_not.falsy(ngx.header['Hello-World'])
-      assert.is_equal("Bye!", ngx.header['Hello-World'])
-    end)
-
-    it("calls ngx.log", function()
-      assert.stub(ngx.log).was.called_with("ERROR:", "============ Bye World! ============")
-    end)
-  end)
 end)
