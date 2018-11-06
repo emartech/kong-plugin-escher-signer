@@ -58,4 +58,21 @@ function TestHelper.setup_consumer(customer_name)
     })
 end
 
+function TestHelper.get_easy_crypto()
+    local EasyCrypto = require("resty.easy-crypto")
+    local ecrypto = EasyCrypto:new({ -- Initialize with default values
+        saltSize = 12,
+        ivSize = 16, -- for CTR mode
+        iterationCount = 10000
+    })
+    return ecrypto
+end
+
+function TestHelper.load_encryption_key_from_file(file_path)
+    local file = assert(io.open(file_path, "r"))
+    local encryption_key = file:read("*all")
+    file:close()
+    return encryption_key
+end
+
 return TestHelper

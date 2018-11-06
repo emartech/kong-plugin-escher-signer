@@ -37,6 +37,7 @@ services:
     volumes:
       - .:/kong-plugins
       - ./spec/kong_tests.conf:/kong/spec/kong_tests.conf
+      - ./spec/secret.txt:/secret.txt
     command: bash -c "/kong/bin/kong migrations up && /kong/bin/kong start -v"
 
   kong-database:
