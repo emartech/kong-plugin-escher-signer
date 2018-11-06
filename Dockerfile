@@ -1,4 +1,4 @@
-FROM emarsys/kong-dev-docker:03dcac138951fc470872105917a67b4655205495
+FROM emarsys/kong-dev-docker:5fa91b6bb62e6a01d6a5a8782a8a550d4d7ec56d
 
 RUN luarocks install classic
 RUN luarocks install lua-easy-crypto 1.0.0
