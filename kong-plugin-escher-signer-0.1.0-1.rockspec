@@ -13,7 +13,8 @@ description = {
 dependencies = {
   "lua ~> 5.1",
   "classic 0.1.0-1",
-  "kong-lib-logger >= 0.3.0-1"
+  "kong-lib-logger >= 0.3.0-1",
+  "lua-easy-crypto 1.0.0"
 }
 build = {
   type = "builtin",
