@@ -29,6 +29,7 @@ kong:
   volumes:
     - .:/kong-plugins
     - ./spec/kong_tests.conf:/kong/spec/kong_tests.conf
+    - ./secret.txt:/secret.txt
 
 kong-database:
   image: postgres:9.6
