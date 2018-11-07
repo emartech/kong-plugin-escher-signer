@@ -6,7 +6,8 @@ RUN apk add \
     g++ \
     openssl-dev
 
-RUN luarocks install classic
-RUN luarocks install escher
-RUN luarocks install lua-easy-crypto 1.0.0
-RUN luarocks install kong-lib-logger --deps-mode=none
+RUN luarocks install date 2.1.2-1
+RUN luarocks install classic 0.1.0-1
+RUN luarocks install escher 0.2-17
+RUN luarocks install lua-easy-crypto 1.0.0-1
+RUN luarocks install kong-lib-logger 0.3.0-1 --deps-mode=none
