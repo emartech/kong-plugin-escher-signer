@@ -1,6 +1,22 @@
 local Escher = require "escher"
 local Object = require "classic"
 
+local function transformHeaders(headersHash)
+    local result = {}
+
+    for header_name, header_value in pairs(headersHash) do
+        if type(value) == "table" then
+            for _, item in ipairs(header_value) do
+                table.insert(result, { header_name, item })
+            end
+        else
+            table.insert(result, { header_name, header_value })
+        end
+    end
+
+    return result
+end
+
 local SignatureGenerator = Object:extend()
 
 function SignatureGenerator:new(config)
@@ -26,10 +42,7 @@ function SignatureGenerator:generate(request, key, secret, credential_scope)
         method = request.method,
         url = request.url,
         body = request.body,
-        headers = {
-            { "Host", request.headers["Host"] },
-            { "X-Ems-Date", request.headers["X-Ems-Date"] }
-        }
+        headers = transformHeaders(request.headers)
     }
 
     local auth_header = escher:generateHeader(transformed_request, {})
