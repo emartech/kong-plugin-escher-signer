@@ -40,7 +40,7 @@ describe("Plugin: escher-signer (access)", function()
                 access_key_id = "dummy_key",
                 api_secret = "dummy_secret",
                 credential_scope = "dummy_credential_scope",
-                encryption_key_path = "/secret.txt"
+                encryption_key_path = "/encryption_key.txt"
             }
 
             local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", mock_config))
@@ -85,7 +85,7 @@ describe("Plugin: escher-signer (access)", function()
                 access_key_id = "dummy_key",
                 api_secret = "dummy_secret",
                 credential_scope = "dummy_credential_scope",
-                encryption_key_path = "/secret.txt"
+                encryption_key_path = "/encryption_key.txt"
             }
 
             local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", mock_config))
