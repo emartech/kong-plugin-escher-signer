@@ -1,3 +1,5 @@
+local Encrypter = require "kong.plugins.escher-signer.encrypter"
+
 local function ensure_file_exists(file_path)
     local file = io.open(file_path, "r")
 
@@ -10,22 +12,6 @@ local function ensure_file_exists(file_path)
     return true
 end
 
-local function get_encryption_key(encryption_key_path)
-    local file = io.open(encryption_key_path, "r")
-    local encryption_key = file:read("*all")
-    file:close()
-    return encryption_key
-end
-
-local function get_easy_crypto()
-    local EasyCrypto = require("resty.easy-crypto")
-    return EasyCrypto:new({
-        saltSize = 12,
-        ivSize = 16,
-        iterationCount = 10000
-    })
-end
-
 local function encrypt_secret(given_value, given_config)
 
     local is_file_exist, error_message = ensure_file_exists(given_config.encryption_key_path)
@@ -34,10 +20,9 @@ local function encrypt_secret(given_value, given_config)
         return false, error_message
     end
 
-    local encryption_key = get_encryption_key(given_config.encryption_key_path)
-    local crypto = get_easy_crypto()
+    local encrypter = Encrypter.create_from_file(given_config.encryption_key_path)
 
-    return true, nil, { api_secret = crypto:encrypt(encryption_key, given_value)}
+    return true, nil, { api_secret = encrypter:encrypt(given_value)}
 end
 
 return {
