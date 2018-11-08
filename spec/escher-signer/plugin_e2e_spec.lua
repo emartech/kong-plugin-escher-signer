@@ -3,7 +3,6 @@ local cjson = require "cjson"
 local Escher = require "escher"
 local date = require "date"
 local TestHelper = require "spec.test_helper"
-local pp = require "pl.pretty"
 
 local function get_response_body(response)
     local body = assert.res_status(201, response)
@@ -211,9 +210,37 @@ describe("Plugin: escher-signer (access)", function()
 
                 assert.are.equal("dummy_key_v1", api_key, err)
             end)
-
         end
 
+        it("should clear or override existing headers", function()
+            local mock_config = {
+                auth_header_name = "X-Ems-Auth",
+                date_header_name = "X-Ems-Date",
+                access_key_id = "dummy_key_v1",
+                api_secret = "dummy_secret",
+                credential_scope = "dummy_credential_scope",
+                encryption_key_path = "/encryption_key.txt"
+            }
 
+            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", mock_config))
+
+            local raw_response = assert(helpers.proxy_client():send {
+                method = "GET",
+                path = "/anything",
+                headers = {
+                    ["Host"] = "example.com",
+                    ["X-Ems-Date"] = "some date",
+                    ["X-Ems-Auth"] = "some auth"
+                }
+            })
+
+            local response = assert.res_status(200, raw_response)
+            local body = cjson.decode(response)
+
+            require "pl.pretty".dump(body.headers)
+
+            assert.are_not.equals("some date", body.headers[string.lower(mock_config.auth_header_name)])
+            assert.are_not.equals("some auth", body.headers[string.lower(mock_config.date_header_name)])
+        end)
     end)
 end)
