@@ -1,6 +1,8 @@
 local helpers = require "spec.helpers"
 local cjson = require "cjson"
 local TestHelper = require "spec.test_helper"
+local SignatureGenerator = require "kong.plugins.escher-signer.signature_generator"
+local pp = require "pl.pretty"
 
 local function get_response_body(response)
     local body = assert.res_status(201, response)
@@ -12,7 +14,7 @@ local function setup_test_env()
 
     local service = get_response_body(TestHelper.setup_service("test-service", "http://mockbin:8080/request"))
     local route = get_response_body(TestHelper.setup_route_for_service(service.id, "/anything"))
-    local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer"))
+    local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer",{}))
     local consumer = get_response_body(TestHelper.setup_consumer("TestUser"))
     return service, route, plugin, consumer
 end
@@ -99,4 +101,85 @@ describe("Plugin: escher-signer (access)", function()
         end)
     end)
 
+    describe("Plugin", function()
+
+        local service, route
+
+        before_each(function()
+            helpers.dao:truncate_tables()
+            service = get_response_body(TestHelper.setup_service("test-service", "http://mockbin:8080/request"))
+            route = get_response_body(TestHelper.setup_route_for_service(service.id, "/anything"))
+        end)
+
+        local test_cases = {
+            "X-Escher-Date", "Some-Other-Header"
+        }
+
+        for test_case = 1, #test_cases do
+
+            it("should set escher date header properly to " .. test_cases[test_case], function()
+                local mock_config = {
+                    auth_header_name = "X-Escher-Auth",
+                    date_header_name = test_cases[test_case],
+                    access_key_id = "dummy_key",
+                    api_secret = "dummy_secret",
+                    credential_scope = "dummy_credential_scope",
+                    encryption_key_path = "/encryption_key.txt"
+                }
+
+                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", mock_config))
+
+                local date = os.date("!%Y%m%dT%H%M%SZ")
+
+                local raw_response = assert(helpers.proxy_client():send {
+                    method = "GET",
+                    path = "/anything",
+                    headers = {
+                        ["Host"] = "example.com",
+                    }
+                })
+
+                local response = assert.res_status(200, raw_response)
+                local body = cjson.decode(response)
+
+                assert.is_equal(date, body.headers[string.lower(mock_config.date_header_name)])
+            end)
+        end
+
+        --it("should set escher auth header properly", function()
+        --    local mock_config = {
+        --        auth_header_name = "X-Escher-Auth",
+        --        date_header_name = "X-Escher-Date",
+        --        access_key_id = "dummy_key",
+        --        api_secret = "dummy_secret",
+        --        credential_scope = "dummy_credential_scope",
+        --        encryption_key_path = "/encryption_key.txt"
+        --    }
+        --
+        --    get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", mock_config))
+        --
+        --    local date = os.date("!%Y%m%dT%H%M%SZ")
+        --
+        --    local request = {
+        --        method = "GET",
+        --        path = "/anything",
+        --        headers = {
+        --            ["Host"] = "example.com",
+        --            [mock_config.date_header_name] = date
+        --        }
+        --    }
+        --
+        --    local raw_response = assert(helpers.proxy_client():send(request))
+        --
+        --    local signature = SignatureGenerator(mock_config):generate(request, mock_config.access_key_id, mock_config.api_secret, mock_config.credential_scope)
+        --    print(signature)
+        --    print(body.headers[string.lower(mock_config.auth_header_name)])
+        --
+        --    local response = assert.res_status(200, raw_response)
+        --    local body = cjson.decode(response)
+        --
+        --    assert.is_equal(signature, body.headers[string.lower(mock_config.auth_header_name)])
+        --end)
+
+    end)
 end)

@@ -24,7 +24,7 @@ function SignatureGenerator:new(config)
 end
 
 function SignatureGenerator:generate(request, key, secret, credential_scope)
-    local x = {
+    local escher = Escher:new({
         vendorKey = self.config.vendor_key,
         algoPrefix = self.config.algo_prefix,
         hashAlgo = self.config.hash_algo,
@@ -34,9 +34,7 @@ function SignatureGenerator:generate(request, key, secret, credential_scope)
         accessKeyId = key,
         apiSecret = secret,
         credentialScope = credential_scope
-    }
-
-    local escher = Escher:new(x)
+    })
 
     local transformed_request = {
         method = request.method,
