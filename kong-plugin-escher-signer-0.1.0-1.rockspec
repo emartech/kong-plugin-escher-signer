@@ -21,6 +21,8 @@ build = {
   type = "builtin",
   modules = {
     ["kong.plugins.escher-signer.handler"] = "kong/plugins/escher-signer/handler.lua",
+    ["kong.plugins.escher-signer.signature_generator"] = "kong/plugins/escher-signer/signature_generator.lua",
+    ["kong.plugins.escher-signer.encrypter"] = "kong/plugins/escher-signer/encrypter.lua",
     ["kong.plugins.escher-signer.schema"] = "kong/plugins/escher-signer/schema.lua",
   }
 }
