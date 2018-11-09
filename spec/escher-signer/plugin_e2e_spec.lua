@@ -237,8 +237,6 @@ describe("Plugin: escher-signer (access)", function()
             local response = assert.res_status(200, raw_response)
             local body = cjson.decode(response)
 
-            require "pl.pretty".dump(body.headers)
-
             assert.are_not.equals("some date", body.headers[string.lower(mock_config.auth_header_name)])
             assert.are_not.equals("some auth", body.headers[string.lower(mock_config.date_header_name)])
         end)
