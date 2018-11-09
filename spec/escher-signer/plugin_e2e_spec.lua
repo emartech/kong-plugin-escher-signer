@@ -54,6 +54,7 @@ describe("Plugin: escher-signer (access)", function()
             assert.is_equal(config.hash_algo, "SHA256")
             assert.is_equal(config.auth_header_name, "X-EMS-Auth")
             assert.is_equal(config.date_header_name, "X-EMS-Date")
+            assert.is_equal(config.darklaunch_mode, false)
         end)
 
         it("should require access_key_id, api_secret, credantial_scope and encryption_key_path", function()
