@@ -38,7 +38,6 @@ return {
         credential_scope = { type = "string", required = true },
         encryption_key_path = { type = "string", required = true },
         additional_headers_to_sign = { type = "array", default = {} },
-        encryption_key_path = { type = "string", required = true },
         darklaunch_mode = { type = "boolean", default = false }
     }
 }
