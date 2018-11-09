@@ -352,6 +352,100 @@ describe("Plugin: escher-signer (access)", function()
 
                 assert.are.equal("dummy_key_v1", api_key, err)
             end)
+
+            it("should set another date header with one second offset", function()
+                local config = {
+                    auth_header_name = "X-Ems-Auth",
+                    date_header_name = "X-Ems-Date",
+                    access_key_id = "dummy_key_v1",
+                    api_secret = "dummy_secret",
+                    credential_scope = "dummy/credential/scope",
+                    encryption_key_path = "/encryption_key.txt",
+                    darklaunch_mode = true
+                }
+
+                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+
+                local raw_response = assert(helpers.proxy_client():send {
+                    method = "GET",
+                    path = "/anything",
+                })
+
+                local response = assert.res_status(200, raw_response)
+                local body = cjson.decode(response)
+
+                local darklaunch_date_header_name = config.date_header_name .. "-Darklaunch"
+                local darklaunch_date_header_name_with_offset =darklaunch_date_header_name .. "-WithOffset"
+
+                assert.is_not.Nil(body.headers[string.lower(darklaunch_date_header_name_with_offset)])
+
+                local time_in_darklaunch_header = body.headers[string.lower(darklaunch_date_header_name)]
+                local time_with_offset = body.headers[string.lower(darklaunch_date_header_name_with_offset)]
+                local diff = date.diff(date(time_with_offset), date(time_in_darklaunch_header))
+
+                assert.are.equal(1, diff:spanseconds())
+            end)
+        end)
+
+        it("should sign escher auth with date header without darklaunch postfix", function()
+            local config = {
+                vendor_key = "EMS",
+                algo_prefix = "EMS",
+                hash_algo = "SHA256",
+                auth_header_name = "X-Ems-Auth",
+                date_header_name = "X-Ems-Date",
+                access_key_id = "dummy_key_v1",
+                api_secret = "dummy_secret",
+                credential_scope = "my/credential/scope",
+                encryption_key_path = "/encryption_key.txt",
+                darklaunch_mode = true
+            }
+
+            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+
+            local raw_response = assert(helpers.proxy_client():send({
+                method = "GET",
+                path = "/anything",
+            }))
+
+            local response = assert.res_status(200, raw_response)
+            local body = cjson.decode(response)
+
+            local darklaunch_auth_header_name_with_offset = config.auth_header_name .. "-Darklaunch-WithOffset"
+            local escher_auth_header = body.headers[string.lower(darklaunch_auth_header_name_with_offset)]
+
+            local darklaunch_date_header_name_with_offset = config.date_header_name .. "-Darklaunch-WithOffset"
+            local escher_date_header = body.headers[string.lower(darklaunch_date_header_name_with_offset)]
+
+            local escher = Escher:new({
+                vendorKey = "EMS",
+                algoPrefix = "EMS",
+                hashAlgo = "SHA256",
+                credentialScope = "my/credential/scope",
+                authHeaderName = "X-Ems-Auth",
+                dateHeaderName = "X-Ems-Date",
+                date = os.date("!%Y%m%dT%H%M%SZ")
+            })
+
+            local api_key, err = escher:authenticate(
+                {
+                    method = "GET",
+                    url = "/anything",
+                    headers = {
+                        { "X-Ems-Auth", escher_auth_header },
+                        { "X-Ems-Date", escher_date_header },
+                        { "Host", "mockbin" }
+                    },
+                }, function(key)
+                if key == "dummy_key_v1" then
+                    return "dummy_secret"
+                end
+
+                error("Escher key not found")
+            end
+            )
+
+            assert.are.equal("dummy_key_v1", api_key, err)
         end)
 
         it("should include additional signed headers in the signature", function()

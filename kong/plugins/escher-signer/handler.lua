@@ -7,10 +7,10 @@ local EscherSignerHandler = BasePlugin:extend()
 
 EscherSignerHandler.PRIORITY = 2000
 
-local function generate_headers(conf)
+local function generate_headers(conf, time)
     local decrypted_secret = Encrypter.create_from_file(conf.encryption_key_path):decrypt(conf.api_secret)
 
-    local current_date = os.date("!%Y%m%dT%H%M%SZ")
+    local current_date = os.date("!%Y%m%dT%H%M%SZ", time)
 
     local headers = ngx.req.get_headers()
 
@@ -30,11 +30,18 @@ local function generate_headers(conf)
 end
 
 local function sign_request(conf)
-    local auth_header, date_header = generate_headers(conf)
+    local current_time = os.time()
+
+    local auth_header, date_header = generate_headers(conf, current_time)
 
     if conf.darklaunch_mode then
+        local auth_header_with_offset, date_header_with_offset = generate_headers(conf, current_time + 1)
+
         ngx.req.set_header(conf.date_header_name .. '-Darklaunch', date_header)
         ngx.req.set_header(conf.auth_header_name .. '-Darklaunch', auth_header)
+
+        ngx.req.set_header(conf.date_header_name .. '-Darklaunch-WithOffset', date_header_with_offset)
+        ngx.req.set_header(conf.auth_header_name .. '-Darklaunch-WithOffset', auth_header_with_offset)
     else
         ngx.req.set_header(conf.date_header_name, date_header)
         ngx.req.set_header(conf.auth_header_name, auth_header)
