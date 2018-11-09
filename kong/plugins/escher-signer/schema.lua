@@ -37,7 +37,7 @@ return {
         api_secret = { type = "string", required = true , func = encrypt_secret },
         credential_scope = { type = "string", required = true },
         encryption_key_path = { type = "string", required = true },
-        additional_headers_to_sign = { type = "array", default = {} }
+        additional_headers_to_sign = { type = "array", default = {} },
         encryption_key_path = { type = "string", required = true },
         darklaunch_mode = { type = "boolean", default = false }
     }
