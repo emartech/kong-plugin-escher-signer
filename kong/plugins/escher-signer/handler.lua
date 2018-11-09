@@ -1,6 +1,7 @@
 local BasePlugin = require "kong.plugins.base_plugin"
 local Encrypter = require "kong.plugins.escher-signer.encrypter"
 local SignatureGenerator = require "kong.plugins.escher-signer.signature_generator"
+local Logger = require "logger"
 
 local EscherSignerHandler = BasePlugin:extend()
 
@@ -28,13 +29,7 @@ local function generate_headers(conf)
     return SignatureGenerator(conf):generate(request, conf.access_key_id, decrypted_secret , conf.credential_scope), current_date
 end
 
-function EscherSignerHandler:new()
-    EscherSignerHandler.super.new(self, "escher-signer")
-end
-
-function EscherSignerHandler:access(conf)
-    EscherSignerHandler.super.access(self)
-
+local function sign_request(conf)
     local auth_header, date_header = generate_headers(conf)
 
     if conf.darklaunch_mode then
@@ -43,6 +38,20 @@ function EscherSignerHandler:access(conf)
     else
         ngx.req.set_header(conf.date_header_name, date_header)
         ngx.req.set_header(conf.auth_header_name, auth_header)
+    end
+end
+
+function EscherSignerHandler:new()
+    EscherSignerHandler.super.new(self, "escher-signer")
+end
+
+function EscherSignerHandler:access(conf)
+    EscherSignerHandler.super.access(self)
+
+    local success, error = pcall(sign_request, conf)
+
+    if not success then
+        Logger.getInstance(ngx):logError(error)
     end
 end
 
