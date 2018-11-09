@@ -111,106 +111,97 @@ describe("Plugin: escher-signer (access)", function()
             route = get_response_body(TestHelper.setup_route_for_service(service.id, "/anything"))
         end)
 
-        local test_cases_for_date_header = {
-            "X-Escher-Date", "Some-Other-Header"
-        }
 
-        for test_case = 1, #test_cases_for_date_header do
+        it("should set escher date header", function()
+            local date_header_name = "X-Ems-Date" .. math.random(100, 999)
 
-            it("should set escher date header properly with " .. test_cases_for_date_header[test_case], function()
-                local mock_config = {
-                    auth_header_name = "X-Escher-Auth",
-                    date_header_name = test_cases_for_date_header[test_case],
-                    access_key_id = "dummy_key",
-                    api_secret = "dummy_secret",
-                    credential_scope = "dummy_credential_scope",
-                    encryption_key_path = "/encryption_key.txt"
+            local plugin_config = {
+                auth_header_name = "X-Escher-Auth",
+                date_header_name = date_header_name,
+                access_key_id = "dummy_key",
+                api_secret = "dummy_secret",
+                credential_scope = "dummy_credential_scope",
+                encryption_key_path = "/encryption_key.txt"
+            }
+
+            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
+
+            local raw_response = assert(helpers.proxy_client():send {
+                method = "GET",
+                path = "/anything",
+                headers = {
+                    ["Host"] = "example.com",
                 }
+            })
 
-                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", mock_config))
+            local response = assert.res_status(200, raw_response)
+            local body = cjson.decode(response)
 
-                local raw_response = assert(helpers.proxy_client():send {
+            assert.is_not.Nil(body.headers[string.lower(date_header_name)])
+
+            local date_from_header = body.headers[string.lower(date_header_name)]
+            local diff = date.diff(date(date_from_header), date())
+
+            assert.is_true(diff:spanseconds() < 5)
+        end)
+
+        it("should set escher auth header", function()
+            local auth_header_name = "X-Ems-Auth" .. math.random(100, 999)
+
+            local plugin_config = {
+                vendor_key = "EMS",
+                algo_prefix = "EMS",
+                hash_algo = "SHA256",
+                auth_header_name = auth_header_name,
+                date_header_name = "X-Ems-Date",
+                access_key_id = "dummy_key_v1",
+                api_secret = "dummy_secret",
+                credential_scope = "my/credential/scope",
+                encryption_key_path = "/encryption_key.txt"
+            }
+
+            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
+
+            local raw_response = assert(helpers.proxy_client():send({
+                method = "GET",
+                path = "/anything",
+            }))
+
+            local response = assert.res_status(200, raw_response)
+            local body = cjson.decode(response)
+            local escher_auth_header = body.headers[string.lower(plugin_config.auth_header_name)]
+            local escher_date_header = body.headers[string.lower(plugin_config.date_header_name)]
+
+            local escher = Escher:new({
+                vendorKey = "EMS",
+                algoPrefix = "EMS",
+                hashAlgo = "SHA256",
+                credentialScope = "my/credential/scope",
+                authHeaderName = auth_header_name,
+                dateHeaderName = "X-Ems-Date",
+                date = os.date("!%Y%m%dT%H%M%SZ")
+            })
+
+            local api_key, err = escher:authenticate(
+                {
                     method = "GET",
-                    path = "/anything",
+                    url = "/anything",
                     headers = {
-                        ["Host"] = "example.com",
-                    }
-                })
-
-                local response = assert.res_status(200, raw_response)
-                local body = cjson.decode(response)
-
-                assert.is_not.Nil(body.headers[string.lower(mock_config.date_header_name)])
-
-                local date_from_header = body.headers[string.lower(mock_config.date_header_name)]
-                local diff = date.diff(date(date_from_header), date())
-
-                assert.is_true(diff:spanseconds() < 5)
-            end)
-        end
-
-        local test_cases_for_auth_header = {
-            "X-Escher-Auth", "Some-Different-Header"
-        }
-
-        for test_case = 1, #test_cases_for_auth_header do
-
-            it("should set escher auth header properly with " .. test_cases_for_auth_header[test_case], function()
-                local mock_config = {
-                    vendor_key = "EMS",
-                    algo_prefix = "EMS",
-                    hash_algo = "SHA256",
-                    auth_header_name = test_cases_for_auth_header[test_case],
-                    date_header_name = "X-Ems-Date",
-                    access_key_id = "dummy_key_v1",
-                    api_secret = "dummy_secret",
-                    credential_scope = "my/credential/scope",
-                    encryption_key_path = "/encryption_key.txt"
-                }
-
-                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", mock_config))
-
-                local raw_response = assert(helpers.proxy_client():send({
-                    method = "GET",
-                    path = "/anything",
-                }))
-
-                local response = assert.res_status(200, raw_response)
-                local body = cjson.decode(response)
-                local escher_auth_header = body.headers[string.lower(mock_config.auth_header_name)]
-                local escher_date_header = body.headers[string.lower(mock_config.date_header_name)]
-
-                local escher = Escher:new({
-                    vendorKey = "EMS",
-                    algoPrefix = "EMS",
-                    hashAlgo = "SHA256",
-                    credentialScope = "my/credential/scope",
-                    authHeaderName = test_cases_for_auth_header[test_case],
-                    dateHeaderName = "X-Ems-Date",
-                    date = os.date("!%Y%m%dT%H%M%SZ")
-                })
-
-                local api_key, err = escher:authenticate(
-                    {
-                        method = "GET",
-                        url = "/anything",
-                        headers = {
-                            { test_cases_for_auth_header[test_case], escher_auth_header },
-                            { "X-Ems-Date", escher_date_header },
-                            { "Host", "mockbin" }
-                        },
-                    }, function(key)
-                        if key == "dummy_key_v1" then
-                            return "dummy_secret"
-                        end
-
-                        error("Escher key not found")
+                        { auth_header_name, escher_auth_header },
+                        { "X-Ems-Date", escher_date_header },
+                        { "Host", "mockbin" }
+                    },
+                }, function(key)
+                    if key == "dummy_key_v1" then
+                        return "dummy_secret"
                     end
-                )
 
-                assert.are.equal("dummy_key_v1", api_key, err)
-            end)
-        end
+                    error("Escher key not found")
+                end
+            )
+
+            assert.are.equal("dummy_key_v1", api_key, err)
+        end)
 
         it("should clear or override existing headers", function()
             local mock_config = {
