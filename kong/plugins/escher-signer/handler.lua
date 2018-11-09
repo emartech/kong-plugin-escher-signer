@@ -6,11 +6,15 @@ local EscherSignerHandler = BasePlugin:extend()
 
 EscherSignerHandler.PRIORITY = 2000
 
-local function generate_auth_header(conf)
+local function generate_headers(conf)
     local decrypted_secret = Encrypter.create_from_file(conf.encryption_key_path):decrypt(conf.api_secret)
 
+    local current_date = os.date("!%Y%m%dT%H%M%SZ")
+
     local headers = ngx.req.get_headers()
+
     headers.host = ngx.ctx.service.host
+    headers[conf.date_header_name] = current_date
 
     ngx.req.read_body()
 
@@ -21,7 +25,7 @@ local function generate_auth_header(conf)
         body = ngx.req.get_body_data()
     }
 
-    return SignatureGenerator(conf):generate(request, conf.access_key_id, decrypted_secret , conf.credential_scope)
+    return SignatureGenerator(conf):generate(request, conf.access_key_id, decrypted_secret , conf.credential_scope), current_date
 end
 
 function EscherSignerHandler:new()
@@ -31,8 +35,15 @@ end
 function EscherSignerHandler:access(conf)
     EscherSignerHandler.super.access(self)
 
-    ngx.req.set_header(conf.date_header_name, os.date("!%Y%m%dT%H%M%SZ"))
-    ngx.req.set_header(conf.auth_header_name, generate_auth_header(conf))
+    local auth_header, date_header = generate_headers(conf)
+
+    if conf.darklaunch_mode then
+        ngx.req.set_header(conf.date_header_name .. '-Darklaunch', date_header)
+        ngx.req.set_header(conf.auth_header_name .. '-Darklaunch', auth_header)
+    else
+        ngx.req.set_header(conf.date_header_name, date_header)
+        ngx.req.set_header(conf.auth_header_name, auth_header)
+    end
 end
 
 return EscherSignerHandler
