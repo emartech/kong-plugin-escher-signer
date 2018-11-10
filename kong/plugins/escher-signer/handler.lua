@@ -21,7 +21,7 @@ local function generate_headers(conf, time)
 
     local request = {
         method = ngx.req.get_method(),
-        url = ngx.var.request_uri,
+        url = ngx.var.upstream_uri,
         headers = headers,
         body = ngx.req.get_body_data()
     }

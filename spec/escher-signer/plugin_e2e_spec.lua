@@ -9,16 +9,6 @@ local function get_response_body(response)
     return cjson.decode(body)
 end
 
-local function setup_test_env()
-    helpers.dao:truncate_tables()
-
-    local service = get_response_body(TestHelper.setup_service("test-service", "http://mockbin:8080/request"))
-    local route = get_response_body(TestHelper.setup_route_for_service(service.id, "/anything"))
-    local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer",{}))
-    local consumer = get_response_body(TestHelper.setup_consumer("TestUser"))
-    return service, route, plugin, consumer
-end
-
 describe("Plugin: escher-signer (access)", function()
 
     setup(function()
@@ -165,7 +155,7 @@ describe("Plugin: escher-signer (access)", function()
 
             local raw_response = assert(helpers.proxy_client():send({
                 method = "GET",
-                path = "/anything",
+                path = "/anything/something",
             }))
 
             local response = assert.res_status(200, raw_response)
@@ -186,7 +176,7 @@ describe("Plugin: escher-signer (access)", function()
             local api_key, err = escher:authenticate(
                 {
                     method = "GET",
-                    url = "/anything",
+                    url = "/request/something",
                     headers = {
                         { auth_header_name, escher_auth_header },
                         { "X-Ems-Date", escher_date_header },
@@ -335,7 +325,7 @@ describe("Plugin: escher-signer (access)", function()
                 local api_key, err = escher:authenticate(
                     {
                         method = "GET",
-                        url = "/anything",
+                        url = "/request",
                         headers = {
                             { "X-Ems-Auth", escher_auth_header },
                             { "X-Ems-Date", escher_date_header },
@@ -430,7 +420,7 @@ describe("Plugin: escher-signer (access)", function()
             local api_key, err = escher:authenticate(
                 {
                     method = "GET",
-                    url = "/anything",
+                    url = "/request",
                     headers = {
                         { "X-Ems-Auth", escher_auth_header },
                         { "X-Ems-Date", escher_date_header },
@@ -495,7 +485,7 @@ describe("Plugin: escher-signer (access)", function()
             local api_key, err = escher:authenticate(
                 {
                     method = "GET",
-                    url = "/anything",
+                    url = "/request",
                     headers = {
                         { "X-Ems-Auth", escher_auth_header },
                         { "X-Ems-Date", escher_date_header },

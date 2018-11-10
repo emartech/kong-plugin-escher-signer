@@ -30,7 +30,7 @@ test: ## Run tests
 
 dev-env: ## Creates a service (myservice) and attaches a plugin to it (myplugin)
 	bash -c "curl -i -X POST --url http://localhost:8001/services/ --data 'name=testapi' --data 'protocol=http' --data 'host=mockbin' --data 'path=/request' --data 'port=8080'"
-	bash -c "curl -i -X POST --url http://localhost:8001/services/testapi/routes/ --data 'paths[]=/'"
+	bash -c "curl -i -X POST --url http://localhost:8001/services/testapi/routes/ --data 'paths[]=/anything'"
 	bash -c "curl -i -X POST --url http://localhost:8001/services/testapi/plugins/ \
 	    --data 'name=escher-signer' \
 	    --data 'config.access_key_id=test_key_v1' \
