@@ -1,4 +1,4 @@
-FROM emarsys/kong-dev-docker:a1a962b1ca0db94bfd69afaf75f1fb7f8b63a585
+FROM emarsys/kong-dev-docker:e5b638588a87cd6cb1b4bb52e6a09dae194a30d1
 
 RUN apk update
 RUN apk add \
