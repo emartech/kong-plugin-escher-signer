@@ -56,4 +56,4 @@ mockbin_on_80:
     args:
       PORT: 80
   ports:
-  - 80
+    - 80
