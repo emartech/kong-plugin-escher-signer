@@ -28,14 +28,14 @@ describe("Plugin: escher-signer (access)", function()
         end)
 
         it("should set default config items on empty config", function()
-            local config = {
+            local plugin_config = {
                 access_key_id = "dummy_key",
                 api_secret = "dummy_secret",
                 credential_scope = "dummy_credential_scope",
                 encryption_key_path = "/encryption_key.txt"
             }
 
-            local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+            local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 
             local config = plugin.config
 
@@ -61,34 +61,34 @@ describe("Plugin: escher-signer (access)", function()
 
         context("when encryption file does not exists", function()
             it("should respond 400", function()
-                local config = {
+                local plugin_config = {
                     access_key_id = "dummy_key",
                     api_secret = "dummy_secret",
                     credential_scope = "dummy_credential_scope",
                     encryption_key_path = "i dont exist.txt"
                 }
-                local plugin_response = TestHelper.setup_plugin_for_service(service.id, "escher-signer", config)
+                local plugin_response = TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config)
 
                 assert.res_status(400, plugin_response)
             end)
         end)
 
         it("should encrypt api_secret", function()
-            local config = {
+            local plugin_config = {
                 access_key_id = "dummy_key",
                 api_secret = "dummy_secret",
                 credential_scope = "dummy_credential_scope",
                 encryption_key_path = "/encryption_key.txt"
             }
 
-            local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+            local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 
             local file_path = plugin.config.encryption_key_path
 
             local encryption_key = TestHelper.load_encryption_key_from_file(file_path)
             local crypto = TestHelper.get_easy_crypto()
 
-            assert.is_equal(config.api_secret, crypto:decrypt(encryption_key, plugin.config.api_secret))
+            assert.is_equal(plugin_config.api_secret, crypto:decrypt(encryption_key, plugin.config.api_secret))
         end)
     end)
 
@@ -119,10 +119,7 @@ describe("Plugin: escher-signer (access)", function()
 
             local raw_response = assert(helpers.proxy_client():send {
                 method = "GET",
-                path = "/anything",
-                headers = {
-                    ["Host"] = "example.com",
-                }
+                path = "/anything"
             })
 
             local response = assert.res_status(200, raw_response)
@@ -160,6 +157,7 @@ describe("Plugin: escher-signer (access)", function()
 
             local response = assert.res_status(200, raw_response)
             local body = cjson.decode(response)
+
             local escher_auth_header = body.headers[string.lower(plugin_config.auth_header_name)]
             local escher_date_header = body.headers[string.lower(plugin_config.date_header_name)]
 
@@ -195,7 +193,7 @@ describe("Plugin: escher-signer (access)", function()
         end)
 
         it("should clear or override existing headers", function()
-            local config = {
+            local plugin_config = {
                 auth_header_name = "X-Ems-Auth",
                 date_header_name = "X-Ems-Date",
                 access_key_id = "dummy_key_v1",
@@ -204,7 +202,7 @@ describe("Plugin: escher-signer (access)", function()
                 encryption_key_path = "/encryption_key.txt"
             }
 
-            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 
             local raw_response = assert(helpers.proxy_client():send {
                 method = "GET",
@@ -219,13 +217,13 @@ describe("Plugin: escher-signer (access)", function()
             local response = assert.res_status(200, raw_response)
             local body = cjson.decode(response)
 
-            assert.are_not.equals("some date", body.headers[string.lower(config.date_header_name)])
-            assert.are_not.equals("some auth", body.headers[string.lower(config.auth_header_name)])
+            assert.are_not.equals("some date", body.headers[string.lower(plugin_config.date_header_name)])
+            assert.are_not.equals("some auth", body.headers[string.lower(plugin_config.auth_header_name)])
         end)
 
         context("when darklaunch_mode is enabled", function()
             it("should set date darklaunch header instead of date header", function()
-                local config = {
+                local plugin_config = {
                     auth_header_name = "X-Ems-Auth",
                     date_header_name = "X-Ems-Date",
                     access_key_id = "dummy_key_v1",
@@ -235,7 +233,7 @@ describe("Plugin: escher-signer (access)", function()
                     darklaunch_mode = true
                 }
 
-                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 
                 local raw_response = assert(helpers.proxy_client():send {
                     method = "GET",
@@ -245,14 +243,14 @@ describe("Plugin: escher-signer (access)", function()
                 local response = assert.res_status(200, raw_response)
                 local body = cjson.decode(response)
 
-                local darklaunch_date_header_name = config.date_header_name .. "-Darklaunch"
+                local darklaunch_date_header_name = plugin_config.date_header_name .. "-Darklaunch"
 
-                assert.is_nil(body.headers[string.lower(config.date_header_name)])
+                assert.is_nil(body.headers[string.lower(plugin_config.date_header_name)])
                 assert.is_not.Nil(body.headers[string.lower(darklaunch_date_header_name)])
             end)
 
             it("should postfix header names with '-Darklaunch'", function()
-                local config = {
+                local plugin_config = {
                     vendor_key = "EMS",
                     algo_prefix = "EMS",
                     hash_algo = "SHA256",
@@ -265,7 +263,7 @@ describe("Plugin: escher-signer (access)", function()
                     darklaunch_mode = true
                 }
 
-                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 
                 local raw_response = assert(helpers.proxy_client():send({
                     method = "GET",
@@ -275,15 +273,15 @@ describe("Plugin: escher-signer (access)", function()
                 local response = assert.res_status(200, raw_response)
                 local body = cjson.decode(response)
 
-                local darklaunch_auth_header_name = config.auth_header_name .. "-Darklaunch"
+                local darklaunch_auth_header_name = plugin_config.auth_header_name .. "-Darklaunch"
                 assert.is_not.Nil(body.headers[string.lower(darklaunch_auth_header_name)])
 
-                local darklaunch_date_header_name = config.date_header_name .. "-Darklaunch"
+                local darklaunch_date_header_name = plugin_config.date_header_name .. "-Darklaunch"
                 assert.is_not.Nil(body.headers[string.lower(darklaunch_date_header_name)])
             end)
 
             it("should sign escher auth with date header without darklaunch postfix", function()
-                local config = {
+                local plugin_config = {
                     vendor_key = "EMS",
                     algo_prefix = "EMS",
                     hash_algo = "SHA256",
@@ -296,7 +294,7 @@ describe("Plugin: escher-signer (access)", function()
                     darklaunch_mode = true
                 }
 
-                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 
                 local raw_response = assert(helpers.proxy_client():send({
                     method = "GET",
@@ -306,10 +304,10 @@ describe("Plugin: escher-signer (access)", function()
                 local response = assert.res_status(200, raw_response)
                 local body = cjson.decode(response)
 
-                local darklaunch_auth_header_name = config.auth_header_name .. "-Darklaunch"
+                local darklaunch_auth_header_name = plugin_config.auth_header_name .. "-Darklaunch"
                 local escher_auth_header = body.headers[string.lower(darklaunch_auth_header_name)]
 
-                local darklaunch_date_header_name = config.date_header_name .. "-Darklaunch"
+                local darklaunch_date_header_name = plugin_config.date_header_name .. "-Darklaunch"
                 local escher_date_header = body.headers[string.lower(darklaunch_date_header_name)]
 
                 local escher = Escher:new({
@@ -344,7 +342,7 @@ describe("Plugin: escher-signer (access)", function()
             end)
 
             it("should set another date header with one second offset", function()
-                local config = {
+                local plugin_config = {
                     auth_header_name = "X-Ems-Auth",
                     date_header_name = "X-Ems-Date",
                     access_key_id = "dummy_key_v1",
@@ -354,7 +352,7 @@ describe("Plugin: escher-signer (access)", function()
                     darklaunch_mode = true
                 }
 
-                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 
                 local raw_response = assert(helpers.proxy_client():send {
                     method = "GET",
@@ -364,7 +362,7 @@ describe("Plugin: escher-signer (access)", function()
                 local response = assert.res_status(200, raw_response)
                 local body = cjson.decode(response)
 
-                local darklaunch_date_header_name = config.date_header_name .. "-Darklaunch"
+                local darklaunch_date_header_name = plugin_config.date_header_name .. "-Darklaunch"
                 local darklaunch_date_header_name_with_offset =darklaunch_date_header_name .. "-WithOffset"
 
                 assert.is_not.Nil(body.headers[string.lower(darklaunch_date_header_name_with_offset)])
@@ -378,7 +376,7 @@ describe("Plugin: escher-signer (access)", function()
         end)
 
         it("should sign escher auth with date header without darklaunch postfix", function()
-            local config = {
+            local plugin_config = {
                 vendor_key = "EMS",
                 algo_prefix = "EMS",
                 hash_algo = "SHA256",
@@ -391,7 +389,7 @@ describe("Plugin: escher-signer (access)", function()
                 darklaunch_mode = true
             }
 
-            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", config))
+            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 
             local raw_response = assert(helpers.proxy_client():send({
                 method = "GET",
@@ -401,10 +399,10 @@ describe("Plugin: escher-signer (access)", function()
             local response = assert.res_status(200, raw_response)
             local body = cjson.decode(response)
 
-            local darklaunch_auth_header_name_with_offset = config.auth_header_name .. "-Darklaunch-WithOffset"
+            local darklaunch_auth_header_name_with_offset = plugin_config.auth_header_name .. "-Darklaunch-WithOffset"
             local escher_auth_header = body.headers[string.lower(darklaunch_auth_header_name_with_offset)]
 
-            local darklaunch_date_header_name_with_offset = config.date_header_name .. "-Darklaunch-WithOffset"
+            local darklaunch_date_header_name_with_offset = plugin_config.date_header_name .. "-Darklaunch-WithOffset"
             local escher_date_header = body.headers[string.lower(darklaunch_date_header_name_with_offset)]
 
             local escher = Escher:new({
