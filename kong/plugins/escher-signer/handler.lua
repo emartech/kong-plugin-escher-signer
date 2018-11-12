@@ -7,6 +7,14 @@ local EscherSignerHandler = BasePlugin:extend()
 
 EscherSignerHandler.PRIORITY = 2000
 
+local function upstream_host(service)
+    if service.protocol == "http"  and service.port ~= 80 or service.protocol == "https" and service.port ~= 443 then
+        return service.host .. ":" .. service.port
+    end
+
+    return service.host
+end
+
 local function generate_headers(conf, time)
     local decrypted_secret = Encrypter.create_from_file(conf.encryption_key_path):decrypt(conf.api_secret)
 
@@ -14,7 +22,7 @@ local function generate_headers(conf, time)
 
     local headers = ngx.req.get_headers()
 
-    headers.host = ngx.ctx.service.host
+    headers.host = upstream_host(ngx.ctx.service)
     headers[conf.date_header_name] = current_date
 
     ngx.req.read_body()

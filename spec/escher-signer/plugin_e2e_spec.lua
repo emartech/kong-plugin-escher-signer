@@ -178,7 +178,7 @@ describe("Plugin: escher-signer (access)", function()
                     headers = {
                         { auth_header_name, escher_auth_header },
                         { "X-Ems-Date", escher_date_header },
-                        { "Host", "mockbin" }
+                        { "Host", "mockbin:8080" }
                     },
                 }, function(key)
                     if key == "dummy_key_v1" then
@@ -187,6 +187,66 @@ describe("Plugin: escher-signer (access)", function()
 
                     error("Escher key not found")
                 end
+            )
+
+            assert.are.equal("dummy_key_v1", api_key, err)
+        end)
+
+        it("should sign host header w/o port when using scheme default", function()
+            local service = get_response_body(TestHelper.setup_service("test-service-80", "http://mockbin_on_80:80/request"))
+            local route = get_response_body(TestHelper.setup_route_for_service(service.id, "/anything-80"))
+            local auth_header_name = "X-Ems-Auth" .. math.random(100, 999)
+
+            local plugin_config = {
+                vendor_key = "EMS",
+                algo_prefix = "EMS",
+                hash_algo = "SHA256",
+                auth_header_name = auth_header_name,
+                date_header_name = "X-Ems-Date",
+                access_key_id = "dummy_key_v1",
+                api_secret = "dummy_secret",
+                credential_scope = "my/credential/scope",
+                encryption_key_path = "/encryption_key.txt"
+            }
+
+            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
+
+            local raw_response = assert(helpers.proxy_client():send({
+                method = "GET",
+                path = "/anything-80/something",
+            }))
+
+            local response = assert.res_status(200, raw_response)
+            local body = cjson.decode(response)
+            local escher_auth_header = body.headers[string.lower(plugin_config.auth_header_name)]
+            local escher_date_header = body.headers[string.lower(plugin_config.date_header_name)]
+
+            local escher = Escher:new({
+                vendorKey = "EMS",
+                algoPrefix = "EMS",
+                hashAlgo = "SHA256",
+                credentialScope = "my/credential/scope",
+                authHeaderName = auth_header_name,
+                dateHeaderName = "X-Ems-Date",
+                date = os.date("!%Y%m%dT%H%M%SZ")
+            })
+
+            local api_key, err = escher:authenticate(
+                {
+                    method = "GET",
+                    url = "/request/something",
+                    headers = {
+                        { auth_header_name, escher_auth_header },
+                        { "X-Ems-Date", escher_date_header },
+                        { "Host", "mockbin_on_80" }
+                    },
+                }, function(key)
+                if key == "dummy_key_v1" then
+                    return "dummy_secret"
+                end
+
+                error("Escher key not found")
+            end
             )
 
             assert.are.equal("dummy_key_v1", api_key, err)
@@ -327,7 +387,7 @@ describe("Plugin: escher-signer (access)", function()
                         headers = {
                             { "X-Ems-Auth", escher_auth_header },
                             { "X-Ems-Date", escher_date_header },
-                            { "Host", "mockbin" }
+                            { "Host", "mockbin:8080" }
                         },
                     }, function(key)
                         if key == "dummy_key_v1" then
@@ -422,7 +482,7 @@ describe("Plugin: escher-signer (access)", function()
                     headers = {
                         { "X-Ems-Auth", escher_auth_header },
                         { "X-Ems-Date", escher_date_header },
-                        { "Host", "mockbin" }
+                        { "Host", "mockbin:8080" }
                     },
                 }, function(key)
                 if key == "dummy_key_v1" then
@@ -487,7 +547,7 @@ describe("Plugin: escher-signer (access)", function()
                     headers = {
                         { "X-Ems-Auth", escher_auth_header },
                         { "X-Ems-Date", escher_date_header },
-                        { "Host", "mockbin" },
+                        { "Host", "mockbin:8080" },
                         { "X-Suite-CustomerId", "112233" }
                     },
                 }, function(key)

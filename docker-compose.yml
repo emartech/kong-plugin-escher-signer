@@ -6,6 +6,7 @@ services:
     depends_on:
       - kong-database
       - mockbin
+      - mockbin_on_80
     environment:
       - KONG_DATABASE=postgres
       - KONG_PG_HOST=kong-database
@@ -46,6 +47,15 @@ services:
       - ./.docker/postgres-data:/var/lib/postgresql/data:rw
 
   mockbin:
-    image: mashape/mockbin
-    ports:
-      - 8080:8080
+    build:
+      context: .
+      args:
+        PORT: 8080
+      dockerfile: ./Dockerfile.mockbin
+
+  mockbin_on_80:
+    build:
+      context: .
+      args:
+        PORT: 80
+      dockerfile: ./Dockerfile.mockbin

@@ -1,0 +1,7 @@
+FROM mashape/mockbin
+
+ARG PORT=8080
+
+RUN npm config set mockbin:port $PORT
+
+EXPOSE $PORT
