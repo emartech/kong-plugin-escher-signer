@@ -5,6 +5,7 @@ kong:
   depends_on:
     - kong-database
     - mockbin
+    - mockbin_on_80
   environment:
     - KONG_DATABASE=postgres
     - KONG_PG_HOST=kong-database
