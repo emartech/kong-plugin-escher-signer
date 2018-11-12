@@ -193,7 +193,7 @@ describe("Plugin: escher-signer (access)", function()
         end)
 
         it("should sign host header w/o port when using scheme default", function()
-            local service = get_response_body(TestHelper.setup_service("test-service-80", "http://mockbin_on_80:80/request"))
+            local service = get_response_body(TestHelper.setup_service("test-service-80", "http://mockbin80:80/request"))
             local route = get_response_body(TestHelper.setup_route_for_service(service.id, "/anything-80"))
             local auth_header_name = "X-Ems-Auth" .. math.random(100, 999)
 
@@ -238,7 +238,7 @@ describe("Plugin: escher-signer (access)", function()
                     headers = {
                         { auth_header_name, escher_auth_header },
                         { "X-Ems-Date", escher_date_header },
-                        { "Host", "mockbin_on_80" }
+                        { "Host", "mockbin80" }
                     },
                 }, function(key)
                 if key == "dummy_key_v1" then
