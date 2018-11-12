@@ -1,6 +1,7 @@
 kong:
-  build: .
-  dockerfile: Dockerfile
+  build:
+    context: .
+    dockerfile: Dockerfile
   depends_on:
     - kong-database
     - mockbin
@@ -39,6 +40,19 @@ kong-database:
     - POSTGRES_PASSWORD=kong
 
 mockbin:
-  image: mashape/mockbin
+  build:
+    context: .
+    dockerfile: Dockerfile.mockbin
+    args:
+      PORT: 8080
   ports:
     - 8080
+
+mockbin_on_80:
+  build:
+    context: .
+    dockerfile: Dockerfile.mockbin
+    args:
+      PORT: 80
+  ports:
+  - 80
