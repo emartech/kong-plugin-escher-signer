@@ -5,7 +5,7 @@ local Logger = require "logger"
 
 local EscherSignerHandler = BasePlugin:extend()
 
-EscherSignerHandler.PRIORITY = 2000
+EscherSignerHandler.PRIORITY = 500
 
 local function upstream_host(service)
     if service.protocol == "http"  and service.port ~= 80 or service.protocol == "https" and service.port ~= 443 then
