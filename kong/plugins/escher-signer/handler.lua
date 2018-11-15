@@ -22,7 +22,12 @@ local function generate_headers(conf, time)
 
     local headers = ngx.req.get_headers()
 
-    headers.host = upstream_host(ngx.ctx.service)
+    if conf.darklaunch_mode and conf.host_override then
+        headers.host = conf.host_override
+    else
+        headers.host = upstream_host(ngx.ctx.service)
+    end
+
     headers[conf.date_header_name] = current_date
 
     ngx.req.read_body()

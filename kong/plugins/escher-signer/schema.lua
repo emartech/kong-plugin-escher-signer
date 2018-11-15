@@ -28,16 +28,17 @@ end
 return {
     no_consumer = true,
     fields = {
-        vendor_key = { type = "string", default = "EMS" },
-        algo_prefix = { type = "string", default = "EMS" },
-        hash_algo = { type = "string", default = "SHA256" },
-        auth_header_name = { type = "string", default = "X-EMS-Auth" },
-        date_header_name = { type = "string", default = "X-EMS-Date" },
         access_key_id = { type = "string", required = true },
-        api_secret = { type = "string", required = true , func = encrypt_secret },
-        credential_scope = { type = "string", required = true },
-        encryption_key_path = { type = "string", required = true },
         additional_headers_to_sign = { type = "array", default = {} },
-        darklaunch_mode = { type = "boolean", default = false }
+        algo_prefix = { type = "string", default = "EMS" },
+        api_secret = { type = "string", required = true , func = encrypt_secret },
+        auth_header_name = { type = "string", default = "X-EMS-Auth" },
+        credential_scope = { type = "string", required = true },
+        date_header_name = { type = "string", default = "X-EMS-Date" },
+        darklaunch_mode = { type = "boolean", default = false },
+        encryption_key_path = { type = "string", required = true },
+        hash_algo = { type = "string", default = "SHA256" },
+        host_override = { type = "string" },
+        vendor_key = { type = "string", default = "EMS" }
     }
 }
