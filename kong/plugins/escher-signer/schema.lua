@@ -39,6 +39,7 @@ return {
         encryption_key_path = { type = "string", required = true },
         hash_algo = { type = "string", default = "SHA256" },
         host_override = { type = "string" },
+        path_pattern = { type = "string" },
         vendor_key = { type = "string", default = "EMS" }
     }
 }

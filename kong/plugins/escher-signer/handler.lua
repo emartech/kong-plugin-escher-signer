@@ -15,6 +15,16 @@ local function upstream_host(service)
     return service.host
 end
 
+local customer_id_header = "X-Suite-CustomerId"
+
+local function transform_upstream_path(request, pattern)
+    local service_path = ngx.ctx.service.path
+    local path = request.url:gsub(service_path .. "/", "", 1)
+    local customer_id = request.headers[customer_id_header] or ""
+
+    return service_path .. pattern:gsub("{customer_id}", customer_id):gsub("{path}", path)
+end
+
 local function generate_headers(conf, time)
     local decrypted_secret = Encrypter.create_from_file(conf.encryption_key_path):decrypt(conf.api_secret)
 
@@ -38,6 +48,10 @@ local function generate_headers(conf, time)
         headers = headers,
         body = ngx.req.get_body_data()
     }
+
+    if conf.path_pattern then
+        request.url = transform_upstream_path(request, conf.path_pattern)
+    end
 
     return SignatureGenerator(conf):generate(request, conf.access_key_id, decrypted_secret , conf.credential_scope), current_date
 end
