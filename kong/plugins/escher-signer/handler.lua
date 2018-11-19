@@ -15,14 +15,11 @@ local function upstream_host(service)
     return service.host
 end
 
-local customer_id_header = "X-Suite-CustomerId"
-
 local function transform_upstream_path(request, pattern)
     local service_path = ngx.ctx.service.path
     local path = request.url:gsub(service_path .. "/", "", 1)
-    local customer_id = request.headers[customer_id_header] or ""
 
-    return service_path .. pattern:gsub("{customer_id}", customer_id):gsub("{path}", path)
+    return service_path .. pattern:gsub("{path}", path)
 end
 
 local function generate_headers(conf, time)
