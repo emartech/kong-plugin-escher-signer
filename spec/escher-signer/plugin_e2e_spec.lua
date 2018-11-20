@@ -468,7 +468,7 @@ describe("Plugin: escher-signer", function()
 
                 local api_key, err = escher_authenticate({
                     method = "GET",
-                    url = "/request/api/something",
+                    url = "/api/something",
                     headers = {
                         { auth_header_name, escher_auth_header },
                         { date_header_name, escher_date_header },
