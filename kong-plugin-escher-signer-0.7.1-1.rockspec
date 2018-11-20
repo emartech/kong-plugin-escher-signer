@@ -1,9 +1,9 @@
 package = "kong-plugin-escher-signer"
-version = "0.7.0-1"
+version = "0.7.1-1"
 supported_platforms = {"linux", "macosx"}
 source = {
   url = "git+https://github.com/emartech/kong-plugin-escher-signer.git",
-  tag = "0.7.0"
+  tag = "0.7.1"
 }
 description = {
   summary = "Escher signer plugin for Kong API gateway",
