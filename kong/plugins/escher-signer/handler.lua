@@ -55,11 +55,6 @@ local function generate_headers(conf, time)
         request.url = transform_upstream_path(request, conf.path_pattern)
     end
 
-    if conf.darklaunch_mode then
-        ngx.req.set_header('X-Request-Url', request.url)
-        ngx.req.set_header('X-Request-Body-Size', string.len(request.body or ''))
-    end
-
     return SignatureGenerator(conf):generate(request, conf.access_key_id, decrypted_secret , conf.credential_scope), current_date
 end
 
