@@ -15,18 +15,7 @@ local function upstream_host(service)
     return service.host
 end
 
-local function transform_upstream_path(request, pattern)
-    local service_path = ngx.ctx.service.path
-    local path = request.url:gsub(service_path .. "/", "", 1)
-
-    return pattern:gsub("{path}", path)
-end
-
-local function generate_headers(conf, time)
-    local decrypted_secret = Encrypter.create_from_file(conf.encryption_key_path):decrypt(conf.api_secret)
-
-    local current_date = os.date("!%Y%m%dT%H%M%SZ", time)
-
+local function get_headers_for_request_signing(conf, current_date)
     local headers = {}
     local request_headers = ngx.req.get_headers()
 
@@ -42,18 +31,33 @@ local function generate_headers(conf, time)
 
     headers[conf.date_header_name] = current_date
 
+    return headers
+end
+
+local function transform_upstream_path(uri, pattern)
+    local service_path = ngx.ctx.service.path
+    local path = uri:gsub(service_path .. "/", "", 1)
+
+    return pattern:gsub("{path}", path)
+end
+
+local function generate_headers(conf, time)
+    local current_date = os.date("!%Y%m%dT%H%M%SZ", time)
+
     ngx.req.read_body()
 
     local request = {
         method = ngx.req.get_method(),
         url = ngx.var.upstream_uri,
-        headers = headers,
+        headers = get_headers_for_request_signing(conf, current_date),
         body = ngx.req.get_body_data()
     }
 
     if conf.path_pattern then
-        request.url = transform_upstream_path(request, conf.path_pattern)
+        request.url = transform_upstream_path(request.url, conf.path_pattern)
     end
+
+    local decrypted_secret = Encrypter.create_from_file(conf.encryption_key_path):decrypt(conf.api_secret)
 
     return SignatureGenerator(conf):generate(request, conf.access_key_id, decrypted_secret , conf.credential_scope), current_date
 end
