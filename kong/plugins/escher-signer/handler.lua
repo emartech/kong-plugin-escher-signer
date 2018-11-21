@@ -27,7 +27,12 @@ local function generate_headers(conf, time)
 
     local current_date = os.date("!%Y%m%dT%H%M%SZ", time)
 
-    local headers = ngx.req.get_headers()
+    local headers = {}
+    local request_headers = ngx.req.get_headers()
+
+    for _, header_name in pairs(conf.additional_headers_to_sign) do
+        headers[header_name] = request_headers[header_name]
+    end
 
     if conf.darklaunch_mode and conf.host_override then
         headers.host = conf.host_override

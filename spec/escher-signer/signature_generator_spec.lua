@@ -9,7 +9,8 @@ describe("SignatureGenerator", function()
                 vendor_key = "EMS",
                 hash_algo = "SHA256",
                 auth_header_name = "X-Ems-Auth",
-                date_header_name = "X-Ems-Date"
+                date_header_name = "X-Ems-Date",
+                additional_headers_to_sign = {}
             })
 
             local request = {

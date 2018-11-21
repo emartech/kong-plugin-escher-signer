@@ -248,6 +248,41 @@ describe("Plugin: escher-signer", function()
             assert.are_not.equals("some auth", body.headers[string.lower(plugin_config.auth_header_name)])
         end)
 
+        context("when auth headers already exist on the request", function()
+            it("should sign request with correct headers", function()
+                get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
+
+                local raw_response = assert(helpers.proxy_client():send({
+                    method = "GET",
+                    path = "/anything/something",
+                    headers = {
+                        [plugin_config.date_header_name] = 'existing header value'
+                    }
+                }))
+
+                local response = assert.res_status(200, raw_response)
+                local body = cjson.decode(response)
+
+                local auth_header_name = plugin_config.auth_header_name
+                local date_header_name = plugin_config.date_header_name
+
+                local escher_auth_header = body.headers[string.lower(auth_header_name)]
+                local escher_date_header = body.headers[string.lower(date_header_name)]
+
+                local api_key, err = escher_authenticate({
+                    method = "GET",
+                    url = "/request/something",
+                    headers = {
+                        { auth_header_name, escher_auth_header },
+                        { date_header_name, escher_date_header },
+                        { "Host", "mockbin:8080" }
+                    }
+                })
+
+                assert("dummy_key" == api_key, err)
+            end)
+        end)
+
         context("when darklaunch_mode is enabled", function()
             before_each(function()
                 plugin_config.darklaunch_mode = true

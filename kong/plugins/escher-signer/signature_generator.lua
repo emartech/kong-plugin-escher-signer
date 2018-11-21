@@ -43,7 +43,13 @@ function SignatureGenerator:generate(request, key, secret, credential_scope)
         headers = transformHeaders(request.headers)
     }
 
-    local auth_header = escher:generateHeader(transformed_request, self.config.additional_headers_to_sign or {})
+    local additional_headers = {}
+
+    for _, header_name in pairs(self.config.additional_headers_to_sign) do
+        table.insert(additional_headers, header_name)
+    end
+
+    local auth_header = escher:generateHeader(transformed_request, additional_headers)
 
     return auth_header
 end
