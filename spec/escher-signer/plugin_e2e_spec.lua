@@ -12,7 +12,7 @@ end
 describe("Plugin: escher-signer", function()
 
     setup(function()
-        helpers.start_kong({ custom_plugins = "escher-signer" })
+        helpers.start_kong({ plugins = "escher-signer" })
     end)
 
     teardown(function()
