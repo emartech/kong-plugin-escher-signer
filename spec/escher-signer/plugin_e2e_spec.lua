@@ -23,7 +23,7 @@ describe("Plugin: escher-signer", function()
         local service, plugin_config
 
         before_each(function()
-            helpers.dao:truncate_tables()
+            helpers.db:truncate()
 
             service = get_response_body(TestHelper.setup_service("test-service", "http://mockbin:8080/request"))
 
@@ -126,7 +126,7 @@ describe("Plugin: escher-signer", function()
         end
 
         before_each(function()
-            helpers.dao:truncate_tables()
+            helpers.db:truncate()
 
             service = get_response_body(TestHelper.setup_service("test-service", "http://mockbin:8080/request"))
 
