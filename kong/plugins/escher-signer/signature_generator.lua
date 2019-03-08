@@ -1,11 +1,11 @@
 local Escher = require "escher"
 local Object = require "classic"
 
-local function transformHeaders(headersHash)
+local function transform_headers(headersHash)
     local result = {}
 
     for header_name, header_value in pairs(headersHash) do
-        if type(value) == "table" then
+        if type(header_value) == "table" then
             for _, item in ipairs(header_value) do
                 table.insert(result, { header_name, item })
             end
@@ -40,7 +40,7 @@ function SignatureGenerator:generate(request, key, secret, credential_scope)
         method = request.method,
         url = request.url,
         body = request.body,
-        headers = transformHeaders(request.headers)
+        headers = transform_headers(request.headers)
     }
 
     local additional_headers = {}

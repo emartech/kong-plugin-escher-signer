@@ -57,9 +57,17 @@ local function generate_headers(conf, time)
         request.url = transform_upstream_path(request.url, conf.path_pattern)
     end
 
+    if conf.darklaunch_mode then
+        Logger.getInstance(ngx):logNotice({
+            darklaunch_escher_request_url = request.url,
+            darklaunch_escher_body_size = string.len(request.body or ''),
+            darklaunch_escher_host = request.host
+        })
+    end
+
     local decrypted_secret = Encrypter.create_from_file(conf.encryption_key_path):decrypt(conf.api_secret)
 
-    return SignatureGenerator(conf):generate(request, conf.access_key_id, decrypted_secret , conf.credential_scope), current_date
+    return SignatureGenerator(conf):generate(request, conf.access_key_id, decrypted_secret, conf.credential_scope), current_date
 end
 
 local function sign_request(conf)
