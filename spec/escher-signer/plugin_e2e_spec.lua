@@ -228,6 +228,36 @@ describe("Plugin: escher-signer", function()
             assert("dummy_key_v1" == api_key, err)
         end)
 
+        it("should sign query params", function()
+            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
+
+            local raw_response = assert(helpers.proxy_client():send({
+                method = "GET",
+                path = "/anything/something?valami=akarmi&barmi=semmi"
+            }))
+
+            local response = assert.res_status(200, raw_response)
+            local body = cjson.decode(response)
+
+            local auth_header_name = plugin_config.auth_header_name
+            local date_header_name = plugin_config.date_header_name
+
+            local escher_auth_header = body.headers[string.lower(auth_header_name)]
+            local escher_date_header = body.headers[string.lower(date_header_name)]
+
+            local api_key, err = escher_authenticate({
+                method = "GET",
+                url = "/request/something?valami=akarmi&barmi=semmi",
+                headers = {
+                    { auth_header_name, escher_auth_header },
+                    { date_header_name, escher_date_header },
+                    { "Host", "mockbin:8080" }
+                }
+            })
+
+            assert("dummy_key" == api_key, err)
+        end)
+
         it("should clear or override existing headers", function()
             get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 

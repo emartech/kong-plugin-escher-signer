@@ -41,6 +41,10 @@ local function transform_upstream_path(uri, pattern)
     return pattern:gsub("{path}", path)
 end
 
+local function get_request_url_with_query_parameters()
+    return ngx.var.upstream_uri .. "?" .. kong.request.get_raw_query()
+end
+
 local function generate_headers(conf, time)
     local current_date = os.date("!%Y%m%dT%H%M%SZ", time)
 
@@ -48,7 +52,7 @@ local function generate_headers(conf, time)
 
     local request = {
         method = ngx.req.get_method(),
-        url = ngx.var.upstream_uri,
+        url = get_request_url_with_query_parameters(),
         headers = get_headers_for_request_signing(conf, current_date),
         body = ngx.req.get_body_data()
     }
