@@ -34,11 +34,17 @@ local function get_headers_for_request_signing(conf, current_date)
     return headers
 end
 
-local function transform_upstream_path(uri, pattern)
+local function transform_upstream_path(uri, pattern, customer_id)
     local service_path = ngx.ctx.service.path
     local path = uri:gsub(service_path .. "/", "", 1)
 
-    return pattern:gsub("{path}", path)
+    local result = pattern:gsub("{path}", path)
+
+    if customer_id then
+        result = result:gsub("{customer_id}", customer_id)
+    end
+
+    return result
 end
 
 local function get_request_url_with_query_parameters()
@@ -58,7 +64,8 @@ local function generate_headers(conf, time)
     }
 
     if conf.path_pattern then
-        request.url = transform_upstream_path(request.url, conf.path_pattern)
+        customer_id = conf.customer_id_header and kong.request.get_header(conf.customer_id_header) or nil
+        request.url = transform_upstream_path(request.url, conf.path_pattern, customer_id)
     end
 
     if conf.darklaunch_mode then

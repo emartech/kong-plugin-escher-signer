@@ -543,6 +543,44 @@ describe("Plugin: escher-signer", function()
 
                 assert("dummy_key" == api_key, err)
             end)
+
+            context("when customer_id_header is given", function()
+                it("should use path to sign request", function()
+                    plugin_config.path_pattern = "/api/customers/{customer_id}/{path}"
+                    plugin_config.customer_id_header = "X-Suite-Customerid"
+
+                    get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
+
+                    local raw_response = assert(helpers.proxy_client():send({
+                        method = "GET",
+                        path = "/anything/something",
+                        headers = {
+                            ["X-Suite-Customerid"] = "112233"
+                        }
+                    }))
+
+                    local response = assert.res_status(200, raw_response)
+                    local body = cjson.decode(response)
+
+                    local auth_header_name = plugin_config.auth_header_name
+                    local date_header_name = plugin_config.date_header_name
+
+                    local escher_auth_header = body.headers[string.lower(auth_header_name)]
+                    local escher_date_header = body.headers[string.lower(date_header_name)]
+
+                    local api_key, err = escher_authenticate({
+                        method = "GET",
+                        url = "/api/customers/112233/something",
+                        headers = {
+                            { auth_header_name, escher_auth_header },
+                            { date_header_name, escher_date_header },
+                            { "Host", "mockbin:8080" }
+                        }
+                    })
+
+                    assert("dummy_key" == api_key, err)
+                end)
+            end)
         end)
     end)
 end)
