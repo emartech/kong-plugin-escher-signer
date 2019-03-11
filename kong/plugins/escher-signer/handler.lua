@@ -59,6 +59,7 @@ local function generate_headers(conf, time)
 
     if conf.darklaunch_mode then
         Logger.getInstance(ngx):logInfo({
+            darklaunch_nginx_upstream_uri = ngx.var.upstream_uri,
             darklaunch_escher_request_url = request.url,
             darklaunch_escher_body_size = string.len(request.body or ''),
             darklaunch_escher_host = request.headers.host
