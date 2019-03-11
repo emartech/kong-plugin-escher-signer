@@ -61,7 +61,7 @@ local function generate_headers(conf, time)
         Logger.getInstance(ngx):logNotice({
             darklaunch_escher_request_url = request.url,
             darklaunch_escher_body_size = string.len(request.body or ''),
-            darklaunch_escher_host = request.host
+            darklaunch_escher_host = request.headers.host
         })
     end
 
