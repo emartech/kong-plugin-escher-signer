@@ -74,7 +74,8 @@ local function generate_headers(conf, time)
             darklaunch_nginx_upstream_uri = ngx.var.upstream_uri,
             darklaunch_escher_request_url = request.url,
             darklaunch_escher_body_size = string.len(request.body or ''),
-            darklaunch_escher_host = request.headers.host
+            darklaunch_escher_host = request.headers.host,
+            darklaunch_service_path = ngx.ctx.service.path
         })
     end
 
