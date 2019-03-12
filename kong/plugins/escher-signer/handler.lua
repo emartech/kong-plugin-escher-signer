@@ -48,8 +48,6 @@ local function transform_upstream_path(uri, pattern, customer_id)
 end
 
 local function get_request_url_with_query_parameters()
-    print(kong.request.get_raw_query())
-
     if kong.request.get_raw_query() ~= "" then
         return ngx.var.upstream_uri .. "?" .. kong.request.get_raw_query()
     end
@@ -58,8 +56,6 @@ end
 
 local function generate_headers(conf, time)
     local current_date = os.date("!%Y%m%dT%H%M%SZ", time)
-
-    print(get_request_url_with_query_parameters())
 
     local request = {
         method = kong.request.get_method(),
