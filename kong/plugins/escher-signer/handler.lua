@@ -17,7 +17,7 @@ end
 
 local function get_headers_for_request_signing(conf, current_date)
     local headers = {}
-    local request_headers = ngx.req.get_headers()
+    local request_headers = kong.request.get_headers()
 
     for _, header_name in pairs(conf.additional_headers_to_sign) do
         headers[header_name] = request_headers[header_name]
@@ -48,19 +48,24 @@ local function transform_upstream_path(uri, pattern, customer_id)
 end
 
 local function get_request_url_with_query_parameters()
-    return ngx.var.upstream_uri .. "?" .. kong.request.get_raw_query()
+    print(kong.request.get_raw_query())
+
+    if kong.request.get_raw_query() ~= "" then
+        return ngx.var.upstream_uri .. "?" .. kong.request.get_raw_query()
+    end
+    return ngx.var.upstream_uri
 end
 
 local function generate_headers(conf, time)
     local current_date = os.date("!%Y%m%dT%H%M%SZ", time)
 
-    ngx.req.read_body()
+    print(get_request_url_with_query_parameters())
 
     local request = {
-        method = ngx.req.get_method(),
+        method = kong.request.get_method(),
         url = get_request_url_with_query_parameters(),
         headers = get_headers_for_request_signing(conf, current_date),
-        body = ngx.req.get_body_data()
+        body = kong.request.get_raw_body()
     }
 
     if conf.path_pattern then
@@ -90,14 +95,14 @@ local function sign_request(conf)
     if conf.darklaunch_mode then
         local auth_header_with_offset, date_header_with_offset = generate_headers(conf, current_time + 1)
 
-        ngx.req.set_header(conf.date_header_name .. '-Darklaunch', date_header)
-        ngx.req.set_header(conf.auth_header_name .. '-Darklaunch', auth_header)
+        kong.service.request.set_header(conf.date_header_name .. '-Darklaunch', date_header)
+        kong.service.request.set_header(conf.auth_header_name .. '-Darklaunch', auth_header)
 
-        ngx.req.set_header(conf.date_header_name .. '-Darklaunch-WithOffset', date_header_with_offset)
-        ngx.req.set_header(conf.auth_header_name .. '-Darklaunch-WithOffset', auth_header_with_offset)
+        kong.service.request.set_header(conf.date_header_name .. '-Darklaunch-WithOffset', date_header_with_offset)
+        kong.service.request.set_header(conf.auth_header_name .. '-Darklaunch-WithOffset', auth_header_with_offset)
     else
-        ngx.req.set_header(conf.date_header_name, date_header)
-        ngx.req.set_header(conf.auth_header_name, auth_header)
+        kong.service.request.set_header(conf.date_header_name, date_header)
+        kong.service.request.set_header(conf.auth_header_name, auth_header)
     end
 end
 
