@@ -36,6 +36,7 @@ end
 
 local function transform_upstream_path(uri, pattern, customer_id)
     local service_path = ngx.ctx.service.path
+    service_path = service_path:gsub("%-", "%%%-")
     local path = uri:gsub(service_path .. "/", "", 1)
 
     local result = pattern:gsub("{path}", path)

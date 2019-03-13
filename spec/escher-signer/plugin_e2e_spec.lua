@@ -543,13 +543,27 @@ describe("Plugin: escher-signer", function()
 
         context("when path_pattern is used", function()
             it("should use path to sign request", function()
+                -- plugin_config.path_pattern = "/api/{path}"
+
+                -- get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
+
+                -- local raw_response = assert(helpers.proxy_client():send({
+                --     method = "GET",
+                --     path = "/anything/something"
+                -- }))
+
+                local service = get_response_body(TestHelper.setup_service("test-service-with-dash", "http://mockbin:8080/request/any-thing"))
+
+                get_response_body(TestHelper.setup_route_for_service(service.id, "/any-thing"))
+
+                plugin_config.access_key_id = "dummy_key_v1"
                 plugin_config.path_pattern = "/api/{path}"
 
                 get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
 
                 local raw_response = assert(helpers.proxy_client():send({
                     method = "GET",
-                    path = "/anything/something"
+                    path = "/any-thing/something",
                 }))
 
                 local response = assert.res_status(200, raw_response)
@@ -571,7 +585,7 @@ describe("Plugin: escher-signer", function()
                     }
                 })
 
-                assert("dummy_key" == api_key, err)
+                assert("dummy_key_v1" == api_key, err)
             end)
 
             context("when customer_id_header is given", function()
