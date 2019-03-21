@@ -36,8 +36,7 @@ end
 
 local function transform_upstream_path(uri, pattern, customer_id)
     local service_path = ngx.ctx.service.path
-    service_path = service_path:gsub("%-", "%%%-")
-    local path = uri:gsub(service_path .. "/", "", 1)
+    local path = uri:gsub(service_path:gsub("%-", "%%%-") .. "/", "", 1)
 
     local result = pattern:gsub("{path}", path)
 
@@ -49,9 +48,12 @@ local function transform_upstream_path(uri, pattern, customer_id)
 end
 
 local function get_request_url_with_query_parameters()
-    if kong.request.get_raw_query() ~= "" then
-        return ngx.var.upstream_uri .. "?" .. kong.request.get_raw_query()
+    local query_string = kong.request.get_raw_query()
+
+    if query_string ~= "" then
+        return ngx.var.upstream_uri .. "?" .. query_string
     end
+
     return ngx.var.upstream_uri
 end
 
@@ -66,7 +68,8 @@ local function generate_headers(conf, time)
     }
 
     if conf.path_pattern then
-        customer_id = conf.customer_id_header and kong.request.get_header(conf.customer_id_header) or nil
+        local customer_id = conf.customer_id_header and kong.request.get_header(conf.customer_id_header) or nil
+
         request.url = transform_upstream_path(request.url, conf.path_pattern, customer_id)
     end
 

@@ -41,6 +41,6 @@ return {
         host_override = { type = "string" },
         path_pattern = { type = "string" },
         vendor_key = { type = "string", default = "EMS" },
-        customer_id_header = { type = string }
+        customer_id_header = { type = "string" }
     }
 }
