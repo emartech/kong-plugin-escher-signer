@@ -1,14 +1,22 @@
 local Escher = require "escher"
 local Object = require "classic"
 
-local function transform_headers(headersHash)
+local function is_header_grouped(header_value)
+    return type(header_value) == "table"
+end
+
+local function unpack_grouped_header(header_name, header_values, target_table)
+    for _, header_value in ipairs(header_values) do
+        table.insert(target_table, { header_name, header_value })
+    end
+end
+
+local function transform_headers(headers)
     local result = {}
 
-    for header_name, header_value in pairs(headersHash) do
-        if type(header_value) == "table" then
-            for _, item in ipairs(header_value) do
-                table.insert(result, { header_name, item })
-            end
+    for header_name, header_value in pairs(headers) do
+        if is_header_grouped(header_value) then
+            unpack_grouped_header(header_name, header_value, result)
         else
             table.insert(result, { header_name, header_value })
         end

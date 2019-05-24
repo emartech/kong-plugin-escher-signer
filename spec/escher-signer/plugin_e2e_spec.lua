@@ -541,17 +541,42 @@ describe("Plugin: escher-signer", function()
             assert("dummy_key" == api_key, err)
         end)
 
+        it("should sign grouped headers correctly", function()
+            plugin_config.additional_headers_to_sign = { "X-My-Custom-Header" }
+
+            get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
+
+            local raw_response = assert(helpers.proxy_client():send({
+                method = "GET",
+                path = "/anything/something",
+                headers = {
+                    ["X-My-Custom-Header"] = { "112233", "445566" }
+                }
+            }))
+
+            local response = assert.res_status(200, raw_response)
+            local body = cjson.decode(response)
+
+            local escher_auth_header = body.headers[string.lower(plugin_config.auth_header_name)]
+            local escher_date_header = body.headers[string.lower(plugin_config.date_header_name)]
+
+            local api_key, err = escher_authenticate({
+                method = "GET",
+                url = "/request/something",
+                headers = {
+                    { plugin_config.auth_header_name, escher_auth_header },
+                    { plugin_config.date_header_name, escher_date_header },
+                    { "Host", "mockbin:8080" },
+                    { "X-My-Custom-Header", "112233" },
+                    { "X-My-Custom-Header", "445566" }
+                }
+            })
+
+            assert("dummy_key" == api_key, err)
+        end)
+
         context("when path_pattern is used", function()
             it("should use path to sign request", function()
-                -- plugin_config.path_pattern = "/api/{path}"
-
-                -- get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
-
-                -- local raw_response = assert(helpers.proxy_client():send({
-                --     method = "GET",
-                --     path = "/anything/something"
-                -- }))
-
                 local service = get_response_body(TestHelper.setup_service("test-service-with-dash", "http://mockbin:8080/request/any-thing"))
 
                 get_response_body(TestHelper.setup_route_for_service(service.id, "/any-thing"))

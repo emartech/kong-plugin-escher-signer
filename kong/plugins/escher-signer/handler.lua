@@ -21,8 +21,16 @@ local function get_upstream_path()
     return ngx.var.upstream_uri
 end
 
-local function upstream_host(service)
-    if service.protocol == "http"  and service.port ~= 80 or service.protocol == "https" and service.port ~= 443 then
+local function is_default_http_request(service)
+    return service.protocol == "http" and service.port == 80
+end
+
+local function is_default_https_request(service)
+    return service.protocol == "https" and service.port == 443
+end
+
+local function get_upstream_host(service)
+    if not (is_default_http_request(service) or is_default_https_request(service)) then
         return service.host .. ":" .. service.port
     end
 
@@ -40,7 +48,7 @@ local function get_headers_for_request_signing(conf, current_date)
     if conf.darklaunch_mode and conf.host_override then
         headers.host = conf.host_override
     else
-        headers.host = upstream_host(get_current_service())
+        headers.host = get_upstream_host(get_current_service())
     end
 
     headers[conf.date_header_name] = current_date

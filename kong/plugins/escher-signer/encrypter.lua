@@ -24,6 +24,7 @@ end
 function Encrypter.create_from_file(file_path)
     local file = io.open(file_path, "r")
     local encryption_key = file:read("*all")
+
     file:close()
 
     return Encrypter(encryption_key)
