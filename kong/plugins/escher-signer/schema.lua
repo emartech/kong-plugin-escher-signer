@@ -13,7 +13,6 @@ local function ensure_file_exists(file_path)
 end
 
 local function encrypt_secret(given_value, given_config)
-
     local is_file_exist, error_message = ensure_file_exists(given_config.encryption_key_path)
 
     if not is_file_exist then

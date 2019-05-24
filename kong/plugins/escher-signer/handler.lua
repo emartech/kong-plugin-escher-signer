@@ -7,6 +7,20 @@ local EscherSignerHandler = BasePlugin:extend()
 
 EscherSignerHandler.PRIORITY = 500
 
+local ISO_BASIC_DATE_FORMAT = "!%Y%m%dT%H%M%SZ"
+
+local function get_current_service()
+    return ngx.ctx.service
+end
+
+local function get_current_service_path()
+    return get_current_service().path
+end
+
+local function get_upstream_path()
+    return ngx.var.upstream_uri
+end
+
 local function upstream_host(service)
     if service.protocol == "http"  and service.port ~= 80 or service.protocol == "https" and service.port ~= 443 then
         return service.host .. ":" .. service.port
@@ -26,7 +40,7 @@ local function get_headers_for_request_signing(conf, current_date)
     if conf.darklaunch_mode and conf.host_override then
         headers.host = conf.host_override
     else
-        headers.host = upstream_host(ngx.ctx.service)
+        headers.host = upstream_host(get_current_service())
     end
 
     headers[conf.date_header_name] = current_date
@@ -35,30 +49,26 @@ local function get_headers_for_request_signing(conf, current_date)
 end
 
 local function transform_upstream_path(uri, pattern, customer_id)
-    local service_path = ngx.ctx.service.path
-    local path = uri:gsub(service_path:gsub("%-", "%%%-") .. "/", "", 1)
+    local escaped_service_path = get_current_service_path():gsub("%-", "%%%-")
+    local path_without_service_path = uri:gsub(escaped_service_path .. "/", "", 1)
+    local upstream_path = pattern:gsub("{path}", path_without_service_path)
 
-    local result = pattern:gsub("{path}", path)
-
-    if customer_id then
-        result = result:gsub("{customer_id}", customer_id)
+    if not customer_id then
+        return upstream_path
     end
 
-    return result
+    return upstream_path:gsub("{customer_id}", customer_id)
 end
 
 local function get_request_url_with_query_parameters()
     local query_string = kong.request.get_raw_query()
+    local upstream_path = get_upstream_path()
 
-    if query_string ~= "" then
-        return ngx.var.upstream_uri .. "?" .. query_string
-    end
-
-    return ngx.var.upstream_uri
+    return query_string == "" and upstream_path or ("%s?%s"):format(upstream_path, query_string)
 end
 
 local function generate_headers(conf, time)
-    local current_date = os.date("!%Y%m%dT%H%M%SZ", time)
+    local current_date = os.date(ISO_BASIC_DATE_FORMAT, time)
 
     local request = {
         method = kong.request.get_method(),
@@ -75,11 +85,11 @@ local function generate_headers(conf, time)
 
     if conf.darklaunch_mode then
         Logger.getInstance(ngx):logInfo({
-            darklaunch_nginx_upstream_uri = ngx.var.upstream_uri,
+            darklaunch_nginx_upstream_uri = get_upstream_path(),
             darklaunch_escher_request_url = request.url,
-            darklaunch_escher_body_size = string.len(request.body or ''),
+            darklaunch_escher_body_size = string.len(request.body or ""),
             darklaunch_escher_host = request.headers.host,
-            darklaunch_service_path = ngx.ctx.service.path
+            darklaunch_service_path = get_current_service_path()
         })
     end
 
@@ -96,11 +106,11 @@ local function sign_request(conf)
     if conf.darklaunch_mode then
         local auth_header_with_offset, date_header_with_offset = generate_headers(conf, current_time + 1)
 
-        kong.service.request.set_header(conf.date_header_name .. '-Darklaunch', date_header)
-        kong.service.request.set_header(conf.auth_header_name .. '-Darklaunch', auth_header)
+        kong.service.request.set_header(conf.date_header_name .. "-Darklaunch", date_header)
+        kong.service.request.set_header(conf.auth_header_name .. "-Darklaunch", auth_header)
 
-        kong.service.request.set_header(conf.date_header_name .. '-Darklaunch-WithOffset', date_header_with_offset)
-        kong.service.request.set_header(conf.auth_header_name .. '-Darklaunch-WithOffset', auth_header_with_offset)
+        kong.service.request.set_header(conf.date_header_name .. "-Darklaunch-WithOffset", date_header_with_offset)
+        kong.service.request.set_header(conf.auth_header_name .. "-Darklaunch-WithOffset", auth_header_with_offset)
     else
         kong.service.request.set_header(conf.date_header_name, date_header)
         kong.service.request.set_header(conf.auth_header_name, auth_header)
