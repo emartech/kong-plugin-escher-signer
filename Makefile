@@ -22,10 +22,10 @@ build: ## Rebuild containers
 complete-restart: clear-db down up    ## Clear DB and restart containers
 
 publish: ## Build and publish plugin to luarocks
-	docker-compose run kong bash -c "cd /kong-plugins && chmod +x publish.sh && ./publish.sh"
+	docker-compose run --rm kong bash -c "cd /kong-plugins && chmod +x publish.sh && ./publish.sh"
 
 test: ## Run tests
-	docker-compose run kong bash -c "cd /kong && bin/kong migrations up && bin/busted /kong-plugins/spec"
+	docker-compose run --rm kong bash -c "cd /kong && bin/kong migrations up && bin/busted /kong-plugins/spec"
 	docker-compose down
 
 dev-env: ## Creates a service (myservice) and attaches a plugin to it (myplugin)
@@ -42,7 +42,7 @@ ping: ## Pings kong on localhost:8000
 	bash -c "curl -i http://localhost:8000"
 
 ssh: ## Pings kong on localhost:8000
-	docker-compose run kong bash
+	docker-compose run --rm kong bash
 
 db: ## Access DB
-	docker-compose run kong bash -c "psql -h kong-database -U kong"
+	docker-compose run --rm kong bash -c "psql -h kong-database -U kong"
