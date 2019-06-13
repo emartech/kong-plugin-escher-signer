@@ -316,7 +316,7 @@ describe("Plugin: escher-signer", function()
                     method = "GET",
                     path = "/anything/something",
                     headers = {
-                        [plugin_config.date_header_name] = 'existing header value'
+                        [plugin_config.date_header_name] = "existing header value"
                     }
                 }))
 

@@ -64,7 +64,7 @@ describe("SignatureGenerator", function()
                 hash_algo = "SHA256",
                 auth_header_name = "X-Ems-Auth",
                 date_header_name = "X-Ems-Date",
-                additional_headers_to_sign = { 'X-Suite-CustomerId' }
+                additional_headers_to_sign = { "X-Suite-CustomerId" }
             })
 
             local request = {
@@ -125,7 +125,7 @@ describe("SignatureGenerator", function()
                 hash_algo = "SHA256",
                 auth_header_name = "X-Ems-Auth",
                 date_header_name = "X-Ems-Date",
-                additional_headers_to_sign = { 'X-Suite-CustomerId' }
+                additional_headers_to_sign = { "X-Suite-CustomerId" }
             })
 
             local request = {
