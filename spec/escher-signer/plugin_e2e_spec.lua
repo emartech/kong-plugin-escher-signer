@@ -3,6 +3,7 @@ local cjson = require "cjson"
 local Escher = require "escher"
 local date = require "date"
 local TestHelper = require "spec.test_helper"
+local kong_client = require "kong_client.spec.test_helpers"
 
 local function get_response_body(response)
     local body = assert.res_status(201, response)
@@ -10,9 +11,11 @@ local function get_response_body(response)
 end
 
 describe("Plugin: escher-signer", function()
+    local send_admin_request
 
     setup(function()
         helpers.start_kong({ plugins = "escher-signer" })
+        send_admin_request = kong_client.create_request_sender(helpers.admin_client())
     end)
 
     teardown(function()
@@ -29,10 +32,18 @@ describe("Plugin: escher-signer", function()
 
             plugin_config = {
                 access_key_id = "dummy_key",
-                api_secret = "dummy_secret",
                 credential_scope = "dummy_credential_scope",
-                encryption_key_path = "/encryption_key.txt"
             }
+
+            send_admin_request({
+                method = "POST",
+                path = "/access-key",
+                body = {
+                    access_key = "dummy_key",
+                    secret = "dummy_secret",
+                    encryption_key_path = "/encryption_key.txt"
+                }
+            })
         end)
 
         it("should set default config items on empty config", function()
@@ -48,16 +59,14 @@ describe("Plugin: escher-signer", function()
             assert.is_equal(config.darklaunch_mode, false)
         end)
 
-        it("should require access_key_id, api_secret, credantial_scope and encryption_key_path", function()
+        it("should require access_key_id, credantial_scope", function()
             local plugin_response = TestHelper.setup_plugin_for_service(service.id, "escher-signer", {})
 
             local body = assert.res_status(400, plugin_response)
             local plugin = cjson.decode(body)
 
-            assert.is_equal(plugin["config.access_key_id"], "access_key_id is required")
-            assert.is_equal(plugin["config.api_secret"], "api_secret is required")
-            assert.is_equal(plugin["config.credential_scope"], "credential_scope is required")
-            assert.is_equal(plugin["config.encryption_key_path"], "encryption_key_path is required")
+            assert.is_equal("required field missing", plugin.fields.config.access_key_id)
+            assert.is_equal("required field missing", plugin.fields.config.credential_scope)
         end)
 
         it("should allow host_override, path_pattern", function()
@@ -72,37 +81,23 @@ describe("Plugin: escher-signer", function()
             assert.is_equal(config.path_pattern, "/example/{customer_id}/{path}")
         end)
 
-        context("when encryption file does not exists", function()
-            it("should respond 400", function()
-                plugin_config.encryption_key_path = "i dont exist.txt"
+        it("should require an existing access_key in the db for the given access_key_id", function()
+            plugin_config.access_key_id = "another_key"
+            local plugin_response = TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config)
 
-                local plugin_response = TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config)
+            local body = assert.res_status(400, plugin_response)
+            local plugin = cjson.decode(body)
 
-                assert.res_status(400, plugin_response)
-            end)
-        end)
-
-        it("should encrypt api_secret", function()
-            local plugin = get_response_body(TestHelper.setup_plugin_for_service(service.id, "escher-signer", plugin_config))
-
-            local file_path = plugin.config.encryption_key_path
-
-            local encryption_key = TestHelper.load_encryption_key_from_file(file_path)
-            local crypto = TestHelper.get_easy_crypto()
-
-            assert.is_equal(plugin_config.api_secret, crypto:decrypt(encryption_key, plugin.config.api_secret))
+            assert.is_equal("Could not find persisted access key", plugin.fields.config.access_key_id)
         end)
     end)
 
     describe(".access", function()
         local service, route, plugin_config
+        local secret = "dummy_secret"
 
         local function escher_key_db(key)
-            if key == plugin_config.access_key_id then
-                return plugin_config.api_secret
-            end
-
-            error("Escher key not found")
+            return secret
         end
 
         local function escher_authenticate(request)
@@ -136,10 +131,28 @@ describe("Plugin: escher-signer", function()
                 auth_header_name = "X-Ems-Auth" .. math.random(100, 999),
                 date_header_name = "X-Ems-Date" .. math.random(100, 999),
                 access_key_id = "dummy_key",
-                api_secret = "dummy_secret",
-                credential_scope = "dummy/credential/scope",
-                encryption_key_path = "/encryption_key.txt"
+                credential_scope = "dummy/credential/scope"
             }
+
+            send_admin_request({
+                method = "POST",
+                path = "/access-key",
+                body = {
+                    access_key = "dummy_key",
+                    secret = secret,
+                    encryption_key_path = "/encryption_key.txt"
+                }
+            })
+
+            send_admin_request({
+                method = "POST",
+                path = "/access-key",
+                body = {
+                    access_key = "dummy_key_v1",
+                    secret = secret,
+                    encryption_key_path = "/encryption_key.txt"
+                }
+            })
         end)
 
         it("should set escher date header", function()

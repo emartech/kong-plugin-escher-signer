@@ -20,10 +20,10 @@ kong:
     - KONG_PLUGINS=bundled,escher-signer
     - KONG_NGINX_DAEMON=off
     - LUA_PATH=/kong-plugins/?.lua;/kong-plugins/?/init.lua;;
-    - KONG_ADMIN_ACCESS_LOG=/proc/1/fd/1
-    - KONG_ADMIN_ERROR_LOG=/proc/1/fd/2
-    - KONG_PROXY_ACCESS_LOG=/proc/1/fd/1
-    - KONG_PROXY_ERROR_LOG=/proc/1/fd/2
+    - KONG_ADMIN_ACCESS_LOG=/proc/self/fd/1
+    - KONG_ADMIN_ERROR_LOG=/proc/self/fd/2
+    - KONG_PROXY_ACCESS_LOG=/proc/self/fd/1
+    - KONG_PROXY_ERROR_LOG=/proc/self/fd/2
     - KONG_NGINX_WORKER_PROCESSES=1
   ports:
     - 8000

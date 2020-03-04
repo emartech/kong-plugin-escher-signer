@@ -1,45 +1,37 @@
-local Encrypter = require "kong.plugins.escher-signer.encrypter"
+local typedefs = require "kong.db.schema.typedefs"
 
-local function ensure_file_exists(file_path)
-    local file = io.open(file_path, "r")
-
-    if file == nil then
-        return false, "Encryption key file could not be found."
+local function find_access_key_in_db(access_key_id)
+    local result, err = kong.db.access_key:select({ access_key = access_key_id })
+    if not result or err then
+        return false, err or "Could not find persisted access key"
     end
-
-    file:close()
-
     return true
 end
 
-local function encrypt_secret(given_value, given_config)
-    local is_file_exist, error_message = ensure_file_exists(given_config.encryption_key_path)
-
-    if not is_file_exist then
-        return false, error_message
-    end
-
-    local encrypter = Encrypter.create_from_file(given_config.encryption_key_path)
-
-    return true, nil, { api_secret = encrypter:encrypt(given_value)}
-end
-
 return {
-    no_consumer = true,
+    name = "escher-signer",
     fields = {
-        access_key_id = { type = "string", required = true },
-        additional_headers_to_sign = { type = "array", default = {} },
-        algo_prefix = { type = "string", default = "EMS" },
-        api_secret = { type = "string", required = true , func = encrypt_secret },
-        auth_header_name = { type = "string", default = "X-EMS-Auth" },
-        credential_scope = { type = "string", required = true },
-        date_header_name = { type = "string", default = "X-EMS-Date" },
-        darklaunch_mode = { type = "boolean", default = false },
-        encryption_key_path = { type = "string", required = true },
-        hash_algo = { type = "string", default = "SHA256" },
-        host_override = { type = "string" },
-        path_pattern = { type = "string" },
-        vendor_key = { type = "string", default = "EMS" },
-        customer_id_header = { type = "string" }
+        {
+            consumer = typedefs.no_consumer
+        },
+        {
+            config = {
+                type = "record",
+                fields = {
+                    { access_key_id = { type = "string", required = true, custom_validator = find_access_key_in_db } },
+                    { additional_headers_to_sign = { type = "array", elements = { type = "string" }, default = {} } },
+                    { algo_prefix = { type = "string", default = "EMS" } },
+                    { auth_header_name = { type = "string", default = "X-EMS-Auth" } },
+                    { credential_scope = { type = "string", required = true } },
+                    { date_header_name = { type = "string", default = "X-EMS-Date" } },
+                    { darklaunch_mode = { type = "boolean", default = false } },
+                    { hash_algo = { type = "string", default = "SHA256" } },
+                    { host_override = { type = "string" } },
+                    { path_pattern = { type = "string" } },
+                    { vendor_key = { type = "string", default = "EMS" } },
+                    { customer_id_header = { type = "string" } }
+                }
+            }
+        }   
     }
 }

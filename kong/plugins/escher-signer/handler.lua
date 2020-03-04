@@ -2,6 +2,7 @@ local BasePlugin = require "kong.plugins.base_plugin"
 local Encrypter = require "kong.plugins.escher-signer.encrypter"
 local SignatureGenerator = require "kong.plugins.escher-signer.signature_generator"
 local Logger = require "logger"
+local endpoints = require "kong.api.endpoints"
 
 local EscherSignerHandler = BasePlugin:extend()
 
@@ -101,8 +102,8 @@ local function generate_headers(conf, time)
         })
     end
 
-    local decrypted_secret = Encrypter.create_from_file(conf.encryption_key_path):decrypt(conf.api_secret)
-
+    local access_key = kong.db.access_key:select({ access_key = conf.access_key_id })    
+    local decrypted_secret = Encrypter.create_from_file(access_key.encryption_key_path):decrypt(access_key.secret)
     return SignatureGenerator(conf):generate(request, conf.access_key_id, decrypted_secret, conf.credential_scope), current_date
 end
 
