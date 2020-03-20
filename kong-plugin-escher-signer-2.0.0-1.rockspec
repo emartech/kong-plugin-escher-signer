@@ -24,5 +24,7 @@ build = {
     ["kong.plugins.escher-signer.signature_generator"] = "kong/plugins/escher-signer/signature_generator.lua",
     ["kong.plugins.escher-signer.encrypter"] = "kong/plugins/escher-signer/encrypter.lua",
     ["kong.plugins.escher-signer.schema"] = "kong/plugins/escher-signer/schema.lua",
+    ["kong.plugins.escher-signer.migrations.000_base_escher_signer"] = "kong/plugins/escher-signer/migrations/000_base_escher_signer.lua",
+    ["kong.plugins.escher-signer.migrations.init"] = "kong/plugins/escher-signer/migrations/init.lua"
   }
 }
